@@ -74,7 +74,6 @@ const defaultState = () => ({
   lobbyOpen: true,
   drivers: [],
   raceInfoItems: [
-<<<<<<< HEAD
     { id: "red-light", name: "RED LIGHT", color: "red", subText: "BE READY", textColor: null },
     { id: "green-light", name: "GREEN LIGHT", color: "green", subText: "GO! GO! GO!", textColor: null },
     { id: "safety-car-out", name: "SAFETY CAR OUT", color: "yellow", subText: "", textColor: null },
@@ -97,30 +96,6 @@ const defaultState = () => ({
     { id: "penalty-stopgo", name: "STOP & GO PENALTY", color: "red", target: true, subText: "", textColor: null },
     { id: "penalty-tracklimits", name: "TRACK LIMITS WARNING", color: "yellow", target: true, subText: "", textColor: null },
     { id: "penalty-dsq", name: "DISQUALIFICATION", color: "black", target: true, subText: "", textColor: null },
-=======
-    { id: "red-light", name: "RED LIGHT", color: "red" },
-    { id: "green-light", name: "GREEN LIGHT", color: "green" },
-    { id: "safety-car-out", name: "SAFETY CAR OUT", color: "yellow" },
-    { id: "safety-car-in", name: "SAFETY CAR IN", color: "yellow" },
-    { id: "no-overtake", name: "NO OVERTAKE", color: "blue" },
-    { id: "no-closing-gap", name: "NO CLOSING GAP", color: "blue" },
-  ],
-  flags: [
-    { id: "yellow-flag", name: "YELLOW FLAG", color: "yellow", target: false },
-    { id: "chequered-flag", name: "CHEQUERED FLAG", color: "black", target: false },
-    { id: "blue-flag", name: "BLUE FLAG", color: "blue", target: true },
-    { id: "black-flag", name: "BLACK FLAG", color: "black", target: true },
-    { id: "white-flag", name: "WHITE FLAG", color: "white", target: true },
-    { id: "black-white-flag", name: "BLACK & WHITE FLAG", color: "black", target: true },
-  ],
-  penalties: [
-    { id: "penalty-5s", name: "5 SEC TIME PENALTY", color: "red", target: true },
-    { id: "penalty-10s", name: "10 SEC TIME PENALTY", color: "red", target: true },
-    { id: "penalty-drivethrough", name: "DRIVE THROUGH PENALTY", color: "red", target: true },
-    { id: "penalty-stopgo", name: "STOP & GO PENALTY", color: "red", target: true },
-    { id: "penalty-tracklimits", name: "TRACK LIMITS WARNING", color: "yellow", target: true },
-    { id: "penalty-dsq", name: "DISQUALIFICATION", color: "black", target: true },
->>>>>>> d6869ed5580eaf2b5289707af6fb2c5a9f574de1
   ],
   activeSignals: [],
   // Permanent log of every penalty ever handed to a driver - separate from
@@ -405,19 +380,12 @@ function ItemFormModal({ title, initial, allowTarget, onSave, onDelete, onClose 
   const [name, setName] = useState(initial?.name || "");
   const [color, setColor] = useState(initial?.color || "red");
   const [target, setTarget] = useState(initial?.target ?? false);
-<<<<<<< HEAD
   const [subText, setSubText] = useState(initial?.subText || "");
   const [textColor, setTextColor] = useState(initial?.textColor || "");
 
   return (
     <div className="fixed inset-0 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0" style={{ background: "rgba(0,0,0,0.8)", zIndex: 50 }}>
       <div className="w-full max-w-md" style={{ background: INK, border: `1px solid ${LINE}`, maxHeight: "90vh", overflowY: "auto" }}>
-=======
-
-  return (
-    <div className="fixed inset-0 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0" style={{ background: "rgba(0,0,0,0.8)", zIndex: 50 }}>
-      <div className="w-full max-w-md" style={{ background: INK, border: `1px solid ${LINE}` }}>
->>>>>>> d6869ed5580eaf2b5289707af6fb2c5a9f574de1
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${LINE}` }}>
           <p className="text-white font-black uppercase text-sm">{title}</p>
           <button onClick={onClose} className="f1-link">
@@ -466,7 +434,6 @@ function ItemFormModal({ title, initial, allowTarget, onSave, onDelete, onClose 
             </label>
           )}
 
-<<<<<<< HEAD
           {!target && (
             <div>
               <Label>Secondary Text (opsional)</Label>
@@ -516,8 +483,6 @@ function ItemFormModal({ title, initial, allowTarget, onSave, onDelete, onClose 
             </p>
           </div>
 
-=======
->>>>>>> d6869ed5580eaf2b5289707af6fb2c5a9f574de1
           <div className="flex gap-3 pt-2">
             {initial && onDelete && (
               <button
@@ -536,11 +501,8 @@ function ItemFormModal({ title, initial, allowTarget, onSave, onDelete, onClose 
                   name: name.trim().toUpperCase(),
                   color,
                   target: allowTarget ? target : false,
-<<<<<<< HEAD
                   subText: subText.trim(),
                   textColor: textColor.trim() || null,
-=======
->>>>>>> d6869ed5580eaf2b5289707af6fb2c5a9f574de1
                 });
               }}
               className="f1-btn-primary flex-1 font-black uppercase text-sm px-4 py-3"
@@ -640,7 +602,6 @@ function AdminPanel({ state, mutate, onLogout }) {
     const has = state.activeSignals.some((s) => s.itemId === item.id);
     const next = has
       ? state.activeSignals.filter((s) => s.itemId !== item.id)
-<<<<<<< HEAD
       : [
           ...state.activeSignals,
           {
@@ -654,16 +615,12 @@ function AdminPanel({ state, mutate, onLogout }) {
             textColor: item.textColor || null,
           },
         ];
-=======
-      : [...state.activeSignals, { uid: genId(), section, itemId: item.id, name: item.name, color: item.color, target: false }];
->>>>>>> d6869ed5580eaf2b5289707af6fb2c5a9f574de1
     mutate({ activeSignals: next });
   };
 
   const addDriverSignal = (item, section, driver) => {
     const next = [
       ...state.activeSignals,
-<<<<<<< HEAD
       {
         uid: genId(),
         section,
@@ -675,9 +632,6 @@ function AdminPanel({ state, mutate, onLogout }) {
         subText: item.subText || "",
         textColor: item.textColor || null,
       },
-=======
-      { uid: genId(), section, itemId: item.id, name: item.name, color: item.color, target: true, driverName: driver.name },
->>>>>>> d6869ed5580eaf2b5289707af6fb2c5a9f574de1
     ];
     // Penalties get an extra, permanent record in penaltyHistory - this is
     // what feeds the "Penalty History" list below the driver roster. Flags
