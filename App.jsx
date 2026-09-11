@@ -598,24 +598,62 @@ function AdminPanel({ state, mutate, onLogout }) {
 
   const activeFor = (itemId) => state.activeSignals.filter((s) => s.itemId === itemId);
 
+  // YELLOW FLAG / VIRTUAL SAFETY CAR / GREEN FLAG are fully mutually
+  // exclusive with each other inside Flags: activating ANY one of the three
+  // automatically turns off the other two, regardless of which order they
+  // were turned on in. Matched by exact name (case-insensitive) so it keeps
+  // working even if the admin reorders the Flags list.
+  const FLAG_CHAIN = ["YELLOW FLAG", "VIRTUAL SAFETY CAR", "GREEN FLAG"];
+
   const toggleSimple = (item, section) => {
     const has = state.activeSignals.some((s) => s.itemId === item.id);
-    const next = has
-      ? state.activeSignals.filter((s) => s.itemId !== item.id)
-      : [
-          ...state.activeSignals,
-          {
-            uid: genId(),
-            section,
-            itemId: item.id,
-            name: item.name,
-            color: item.color,
-            target: false,
-            subText: item.subText || "",
-            textColor: item.textColor || null,
-          },
-        ];
-    mutate({ activeSignals: next });
+
+    if (has) {
+      // Turning an already-active item back OFF is just a plain removal -
+      // none of the auto-deactivate logic below applies here.
+      mutate({ activeSignals: state.activeSignals.filter((s) => s.itemId !== item.id) });
+      return;
+    }
+
+    const newSignal = {
+      uid: genId(),
+      section,
+      itemId: item.id,
+      name: item.name,
+      color: item.color,
+      target: false,
+      subText: item.subText || "",
+      textColor: item.textColor || null,
+    };
+
+    let nextSignals = state.activeSignals;
+
+    if (section === "raceInfoItems") {
+      const isFinish = item.name.toUpperCase().includes("FINISH");
+
+      if (isFinish) {
+        // FINISH means the race is over - clear every active signal across
+        // every section (race info, flags, penalties), not just race info.
+        nextSignals = [];
+      } else {
+        // The whole Race Info list is fully mutually exclusive - only one
+        // race state can be shown at a time, regardless of which order
+        // items were activated in (e.g. activating WARM UP LAP after RED
+        // LIGHT still turns RED LIGHT off, not just the other way around).
+        nextSignals = nextSignals.filter((s) => s.section !== "raceInfoItems");
+      }
+    }
+
+    if (section === "flags") {
+      const isChainItem = FLAG_CHAIN.includes(item.name.toUpperCase().trim());
+      if (isChainItem) {
+        nextSignals = nextSignals.filter(
+          (s) => !(s.section === "flags" && FLAG_CHAIN.includes((s.name || "").toUpperCase().trim()))
+        );
+      }
+    }
+
+    mutate({ activeSignals: [...nextSignals, newSignal] });
   };
 
   const addDriverSignal = (item, section, driver) => {
@@ -867,6 +905,10 @@ export default function F1CAdminApp() {
   const [connError, setConnError] = useState(null);
   const stateRef = useRef(state);
   stateRef.current = state;
+  // Chains every Firebase write onto the previous one so they always
+  // resolve in the same order the admin tapped things, no matter how the
+  // network delivers them. See mutate() below for why this matters.
+  const writeQueueRef = useRef(Promise.resolve());
 
   useEffect(() => {
     const unsubscribe = subscribeToState(
@@ -889,19 +931,34 @@ export default function F1CAdminApp() {
     return () => unsubscribe();
   }, []);
 
-  const mutate = useCallback(async (partial) => {
+  const mutate = useCallback((partial) => {
     const merged = { ...stateRef.current, ...partial, updatedAt: Date.now() };
-    // Apply instantly and locally first so the toggle feels immediate;
-    // the Firebase echo will confirm the same data a moment later.
+    // Apply instantly and locally first so every tap feels immediate, even
+    // while a previous save is still in flight.
     setState(merged);
     stateRef.current = merged;
-    try {
-      await saveState(merged);
-      setConnError(null);
-    } catch (e) {
-      setConnError(e.message || String(e));
-      throw e;
-    }
+
+    // The actual network write is queued rather than fired immediately.
+    // Without this, two rapid taps fire two overlapping PUT requests - if
+    // the OLDER one (now stale, missing the second tap's change) happens to
+    // reach Firebase AFTER the newer one, it silently overwrites/reverts
+    // the newer toggle, which is exactly what made buttons feel
+    // unresponsive and need a second or third tap to "stick". Queuing
+    // guarantees writes always land in the same order they were requested.
+    const run = () => saveState(merged);
+    const queued = writeQueueRef.current.then(run, run);
+    writeQueueRef.current = queued.then(
+      () => {},
+      () => {}
+    );
+
+    return queued.then(
+      () => setConnError(null),
+      (e) => {
+        setConnError(e.message || String(e));
+        throw e;
+      }
+    );
   }, []);
 
   if (connError) {
